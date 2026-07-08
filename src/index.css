@@ -1,5 +1,47 @@
 @import 'tailwindcss';
 
+:root {
+  --surface-900: #f1f5f9;
+  --surface-800: #ffffff;
+  --surface-700: #e2e8f0;
+  --fg: #0f172a;
+  --fg-secondary: #334155;
+  --fg-muted: #64748b;
+  --fg-subtle: #94a3b8;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --card: rgb(255 255 255 / 0.9);
+  --card-border: rgb(226 232 240 / 0.9);
+  --input: #ffffff;
+  --input-border: #cbd5e1;
+  --muted: #f1f5f9;
+  --muted-fg: #475569;
+  --hover: #e2e8f0;
+  --overlay: rgb(15 23 42 / 0.75);
+  --upload: rgb(241 245 249 / 0.8);
+}
+
+.dark {
+  --surface-900: #0f1419;
+  --surface-800: #1a2332;
+  --surface-700: #243044;
+  --fg: #ffffff;
+  --fg-secondary: #cbd5e1;
+  --fg-muted: #94a3b8;
+  --fg-subtle: #64748b;
+  --border: #1e293b;
+  --border-strong: #334155;
+  --card: rgb(30 41 59 / 0.4);
+  --card-border: rgb(51 65 85 / 0.6);
+  --input: rgb(15 20 25 / 0.6);
+  --input-border: #475569;
+  --muted: #334155;
+  --muted-fg: #e2e8f0;
+  --hover: #243044;
+  --overlay: rgb(15 20 25 / 0.8);
+  --upload: rgb(30 41 59 / 0.3);
+}
+
 @theme {
   --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --color-brand-50: #ecfdf5;
@@ -7,9 +49,24 @@
   --color-brand-500: #10b981;
   --color-brand-600: #059669;
   --color-brand-700: #047857;
-  --color-surface-900: #0f1419;
-  --color-surface-800: #1a2332;
-  --color-surface-700: #243044;
+  --color-surface-900: var(--surface-900);
+  --color-surface-800: var(--surface-800);
+  --color-surface-700: var(--surface-700);
+  --color-fg: var(--fg);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-input: var(--input);
+  --color-input-border: var(--input-border);
+  --color-muted: var(--muted);
+  --color-muted-fg: var(--muted-fg);
+  --color-hover: var(--hover);
+  --color-overlay: var(--overlay);
+  --color-upload: var(--upload);
 }
 
 body {
@@ -17,6 +74,9 @@ body {
   min-height: 100svh;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  background-color: var(--surface-900);
+  color: var(--fg);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
