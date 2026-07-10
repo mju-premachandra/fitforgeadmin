@@ -17,7 +17,7 @@ export default function Login() {
       const ok = await login(email, password)
       if (!ok) setError('Invalid email or password.')
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError('Backend is not reachable. Start backend server on http://localhost:4000.')
     } finally {
       setSubmitting(false)
     }

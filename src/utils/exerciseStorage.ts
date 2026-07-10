@@ -1,47 +1,28 @@
 import type { Exercise } from '../types/exercise'
-import { openDB, STORES } from './db'
-
-const STORE_NAME = STORES.exercises
+import { api } from '../lib/api'
 
 export async function getAllExercises(): Promise<Exercise[]> {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly')
-    const store = tx.objectStore(STORE_NAME)
-    const request = store.getAll()
-
-    request.onsuccess = () => {
-      const exercises = (request.result as Exercise[]).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
-      resolve(exercises)
-    }
-    request.onerror = () => reject(request.error)
-  })
+  return api.getExercises()
 }
 
 export async function saveExercise(exercise: Exercise): Promise<Exercise> {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite')
-    const store = tx.objectStore(STORE_NAME)
-    const request = store.put(exercise)
+  const payload = {
+    name: exercise.name,
+    instructions: exercise.instructions,
+    frontMuscleImage: exercise.frontMuscleImage,
+    backMuscleImage: exercise.backMuscleImage,
+    video: exercise.video,
+  }
 
-    request.onsuccess = () => resolve(exercise)
-    request.onerror = () => reject(request.error)
-  })
+  try {
+    return await api.updateExercise(exercise.id, payload)
+  } catch {
+    return api.createExercise({ id: exercise.id, ...payload })
+  }
 }
 
 export async function deleteExercise(id: string): Promise<void> {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite')
-    const store = tx.objectStore(STORE_NAME)
-    const request = store.delete(id)
-
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-  })
+  await api.deleteExercise(id)
 }
 
 export function fileToDataUrl(file: File): Promise<string> {

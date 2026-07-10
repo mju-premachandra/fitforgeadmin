@@ -1,12 +1,12 @@
-export type AdminRole = 'owner' | 'admin'
+export type AdminRole = 'owner' | 'admin' | 'trainer'
 
 export interface Admin {
   id: string
   name: string
   email: string
   role: AdminRole
-  passwordHash: string
   createdAt: string
+  updatedAt: string
 }
 
 export interface AdminFormData {

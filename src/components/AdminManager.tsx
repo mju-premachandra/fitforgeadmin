@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { deleteAdmin, getAllAdmins, hashPassword, saveAdmin } from '../utils/adminStorage'
+import { deleteAdmin, getAllAdmins, saveAdmin } from '../utils/adminStorage'
 import type { Admin, AdminFormData, AdminRole } from '../types/admin'
 
 interface AdminManagerProps {
@@ -21,6 +21,7 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const roleLabels: Record<AdminRole, string> = {
   owner: 'Owner',
   admin: 'Admin',
+  trainer: 'Trainer',
 }
 
 export default function AdminManager({ onNotify }: AdminManagerProps) {
@@ -84,17 +85,13 @@ export default function AdminManager({ onNotify }: AdminManagerProps) {
 
     setSaving(true)
     try {
-      const admin: Admin = {
-        id: crypto.randomUUID(),
+      const created = await saveAdmin({
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
+        password: form.password,
         role: form.role,
-        passwordHash: await hashPassword(form.password),
-        createdAt: new Date().toISOString(),
-      }
-
-      await saveAdmin(admin)
-      setAdmins((prev) => [...prev, admin])
+      })
+      setAdmins((prev) => [...prev, created])
       setForm(emptyForm)
       setErrors({})
       onNotify?.('Admin added successfully!')
@@ -180,6 +177,7 @@ export default function AdminManager({ onNotify }: AdminManagerProps) {
               >
                 <option value="admin">Admin</option>
                 <option value="owner">Owner</option>
+                <option value="trainer">Trainer</option>
               </select>
             </div>
 

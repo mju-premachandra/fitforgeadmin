@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { AuthContext, type AuthUser } from './auth-context'
-import { DEFAULT_ADMIN } from '../config/auth'
-import { getAllAdmins, hashPassword } from '../utils/adminStorage'
+import { ApiError, api } from '../lib/api'
 
 const STORAGE_KEY = 'fitforge-auth'
 
@@ -24,26 +23,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(email: string, password: string): Promise<boolean> {
-    const normalized = email.trim().toLowerCase()
-
-    // 1. Default credentials from src/config/auth.ts
-    if (normalized === DEFAULT_ADMIN.email.toLowerCase() && password === DEFAULT_ADMIN.password) {
-      persist({ name: DEFAULT_ADMIN.name, email: DEFAULT_ADMIN.email.toLowerCase(), role: 'owner' })
+    try {
+      const result = await api.login(email, password)
+      persist({
+        name: result.user.name,
+        email: result.user.email,
+        role: result.user.role.toLowerCase() as AuthUser['role'],
+      })
       return true
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) return false
+      throw error
     }
-
-    // 2. Admins created inside the app (stored in IndexedDB)
-    const admins = await getAllAdmins()
-    const match = admins.find((a) => a.email.toLowerCase() === normalized)
-    if (match) {
-      const hash = await hashPassword(password)
-      if (hash === match.passwordHash) {
-        persist({ name: match.name, email: match.email, role: match.role })
-        return true
-      }
-    }
-
-    return false
   }
 
   function logout() {
