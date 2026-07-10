@@ -121,33 +121,12 @@ export const api = {
     return request<{ success: boolean }>(`/exercises/${id}`, { method: 'DELETE' })
   },
   async uploadMedia(file: File): Promise<UploadMediaResponse> {
-    if (import.meta.env.DEV) {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await fetch(`${API_BASE_URL}/media/upload`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        let message = `Upload failed (${response.status})`
-        try {
-          const data = (await response.json()) as { message?: string | string[] }
-          if (Array.isArray(data.message)) message = data.message.join(', ')
-          else if (data.message) message = data.message
-        } catch {
-          // ignore json parse errors
-        }
-        throw new ApiError(response.status, message)
-      }
-
-      return (await response.json()) as UploadMediaResponse
-    }
+    const handleUploadUrl =
+      import.meta.env.VITE_BLOB_UPLOAD_URL ?? '/api/media/upload'
 
     const blob = await uploadToBlob(file.name, file, {
       access: 'public',
-      handleUploadUrl: '/api/media/upload',
+      handleUploadUrl,
     })
 
     return { url: blob.url }

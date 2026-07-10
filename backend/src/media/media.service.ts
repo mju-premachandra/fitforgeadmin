@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { put } from '@vercel/blob';
 import { randomUUID } from 'crypto';
 import { extname } from 'path';
@@ -35,21 +35,31 @@ export class MediaService {
       );
     }
 
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
     if (!token) {
-      throw new BadRequestException('Blob storage is not configured');
+      throw new BadRequestException(
+        'Blob storage is not configured. Add BLOB_READ_WRITE_TOKEN to backend/.env',
+      );
     }
 
     const ext = extname(file.originalname) || mimeToExt(file.mimetype);
     const pathname = `${folder}/${randomUUID()}${ext}`;
 
-    const blob = await put(pathname, file.buffer, {
-      access: 'public',
-      contentType: file.mimetype,
-      token,
-    });
+    try {
+      const blob = await put(pathname, file.buffer, {
+        access: 'public',
+        contentType: file.mimetype,
+        token,
+      });
 
-    return { url: blob.url };
+      return { url: blob.url };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Blob upload failed';
+      throw new InternalServerErrorException(
+        `${message}. Refresh BLOB_READ_WRITE_TOKEN from Vercel → Storage → your store → Copy Snippet, then restart the backend.`,
+      );
+    }
   }
 }
 
