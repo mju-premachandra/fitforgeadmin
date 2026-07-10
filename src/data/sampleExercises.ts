@@ -1,4 +1,5 @@
 import type { Exercise } from '../types/exercise'
+import { api } from '../lib/api'
 import { saveExercise } from '../utils/exerciseStorage'
 
 import barbell1 from '../assets/barbell1.webp'
@@ -47,37 +48,53 @@ export const sampleExercises: Exercise[] = [
   },
 ]
 
+function assetFilename(url: string, fallback: string): string {
+  try {
+    const name = decodeURIComponent(
+      new URL(url, window.location.origin).pathname.split('/').pop() ?? '',
+    )
+    return name || fallback
+  } catch {
+    return fallback
+  }
+}
 
-async function toDataUrl(url: string, cache: Map<string, string>): Promise<string> {
+async function uploadBundledAsset(
+  url: string,
+  fallbackName: string,
+  cache: Map<string, string>,
+): Promise<string> {
   const cached = cache.get(url)
   if (cached) return cached
 
-  // no-store makes sure updated local assets are picked up immediately.
   const response = await fetch(url, { cache: 'no-store' })
   const blob = await response.blob()
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(blob)
+  const file = new File([blob], assetFilename(url, fallbackName), {
+    type: blob.type,
   })
+  const { url: blobUrl } = await api.uploadMedia(file)
 
-  cache.set(url, dataUrl)
-  return dataUrl
+  cache.set(url, blobUrl)
+  return blobUrl
 }
 
 export async function seedSampleExercises(): Promise<void> {
-  // Always sync sample records so asset changes (images/videos) are reflected
-  // immediately without bumping versions or clearing storage.
-  // saveExercise upserts by id, so only the hardcoded sample entries are
-  // touched; user-created exercises with different ids are unaffected.
   const cache = new Map<string, string>()
+
   for (const exercise of sampleExercises) {
     await saveExercise({
       ...exercise,
-      frontMuscleImage: await toDataUrl(exercise.frontMuscleImage, cache),
-      backMuscleImage: await toDataUrl(exercise.backMuscleImage, cache),
-      video: await toDataUrl(exercise.video, cache),
+      frontMuscleImage: await uploadBundledAsset(
+        exercise.frontMuscleImage,
+        'front-muscle.webp',
+        cache,
+      ),
+      backMuscleImage: await uploadBundledAsset(
+        exercise.backMuscleImage,
+        'back-muscle.webp',
+        cache,
+      ),
+      video: await uploadBundledAsset(exercise.video, 'demo.mp4', cache),
     })
   }
 }

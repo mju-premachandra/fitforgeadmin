@@ -24,12 +24,3 @@ export async function saveExercise(exercise: Exercise): Promise<Exercise> {
 export async function deleteExercise(id: string): Promise<void> {
   await api.deleteExercise(id)
 }
-
-export function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
-}

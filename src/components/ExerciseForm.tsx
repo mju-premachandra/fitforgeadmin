@@ -2,7 +2,8 @@ import { useState } from 'react'
 
 import FileUpload from './FileUpload'
 
-import { fileToDataUrl, saveExercise } from '../utils/exerciseStorage'
+import { api } from '../lib/api'
+import { saveExercise } from '../utils/exerciseStorage'
 
 import type { Exercise, ExerciseFormData, MediaField, MediaPreviews } from '../types/exercise'
 
@@ -189,11 +190,12 @@ export default function ExerciseForm({ exercise, onSaved, onCancel }: ExerciseFo
 
 
   async function resolveMedia(field: MediaField): Promise<string> {
-
-    if (form[field]) return fileToDataUrl(form[field]!)
+    if (form[field]) {
+      const { url } = await api.uploadMedia(form[field]!)
+      return url
+    }
 
     return previews[field]!
-
   }
 
 
