@@ -17,5 +17,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts", "vite-plugin-blob-upload.ts", "api/media/blobUploadHandler.ts"]
+  "include": [
+    "vite.config.ts",
+    "vite-plugin-blob-upload.ts",
+    "api/media/blobUploadHandler.ts",
+    "api/media/assertAdminSession.ts"
+  ]
 }

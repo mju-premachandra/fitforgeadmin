@@ -62,6 +62,7 @@ function assetFilename(url: string, fallback: string): string {
 async function uploadBundledAsset(
   url: string,
   fallbackName: string,
+  kind: 'image' | 'video',
   cache: Map<string, string>,
 ): Promise<string> {
   const cached = cache.get(url)
@@ -72,7 +73,7 @@ async function uploadBundledAsset(
   const file = new File([blob], assetFilename(url, fallbackName), {
     type: blob.type,
   })
-  const { url: blobUrl } = await api.uploadMedia(file)
+  const { url: blobUrl } = await api.uploadMedia(file, kind)
 
   cache.set(url, blobUrl)
   return blobUrl
@@ -87,14 +88,21 @@ export async function seedSampleExercises(): Promise<void> {
       frontMuscleImage: await uploadBundledAsset(
         exercise.frontMuscleImage,
         'front-muscle.webp',
+        'image',
         cache,
       ),
       backMuscleImage: await uploadBundledAsset(
         exercise.backMuscleImage,
         'back-muscle.webp',
+        'image',
         cache,
       ),
-      video: await uploadBundledAsset(exercise.video, 'demo.mp4', cache),
+      video: await uploadBundledAsset(
+        exercise.video,
+        'demo.mp4',
+        'video',
+        cache,
+      ),
     })
   }
 }

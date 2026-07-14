@@ -14,8 +14,10 @@ export default function Login() {
     setError(null)
     setSubmitting(true)
     try {
-      const ok = await login(email, password)
-      if (!ok) setError('Invalid email or password.')
+      const result = await login(email, password)
+      if (!result.ok) {
+        setError(result.error ?? 'Invalid email or password.')
+      }
     } catch {
       setError('Backend is not reachable. Start fitforge-backend on http://localhost:3000.')
     } finally {

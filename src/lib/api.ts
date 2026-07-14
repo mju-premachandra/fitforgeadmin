@@ -1,5 +1,6 @@
 import { upload as uploadToBlob } from '@vercel/blob/client'
 import { API_BASE_URL } from './auth-client'
+import { blobPathname, type MediaUploadKind } from './blob-config'
 
 export { API_BASE_URL }
 
@@ -86,11 +87,14 @@ export const api = {
       method: 'DELETE',
     })
   },
-  async uploadMedia(file: File): Promise<UploadMediaResponse> {
+  async uploadMedia(
+    file: File,
+    kind: MediaUploadKind,
+  ): Promise<UploadMediaResponse> {
     const handleUploadUrl =
       import.meta.env.VITE_BLOB_UPLOAD_URL ?? '/api/media/upload'
 
-    const blob = await uploadToBlob(file.name, file, {
+    const blob = await uploadToBlob(blobPathname(kind, file.name), file, {
       access: 'public',
       handleUploadUrl,
     })

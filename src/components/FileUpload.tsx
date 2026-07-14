@@ -166,7 +166,7 @@ export default function FileUpload({
 
           <span className="mt-1 text-xs text-fg-subtle">
 
-            {previewType === 'video' ? 'MP4, WebM' : 'PNG, JPG, WebP'}
+            {previewType === 'video' ? 'MP4, WebM (max 50MB)' : 'PNG, JPG, WebP (max 10MB)'}
 
           </span>
 

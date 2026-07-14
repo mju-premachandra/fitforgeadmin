@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { AuthContext, type AuthRole, type AuthUser } from './auth-context'
+import { AuthContext, type AuthRole, type AuthUser, type LoginResult } from './auth-context'
 import { authClient } from '../lib/auth-client'
 
 function hasAdminRole(role: unknown): boolean {
@@ -55,22 +55,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  async function login(email: string, password: string): Promise<boolean> {
-    const result = await authClient.signIn.email({ email, password })
-    if (result.error) return false
+  async function login(email: string, password: string): Promise<LoginResult> {
+    try {
+      const result = await authClient.signIn.email({ email, password })
+      if (result.error) {
+        return {
+          ok: false,
+          error:
+            result.error.message ??
+            'Sign in failed. Check your email and password.',
+        }
+      }
 
-    const session = await authClient.getSession()
-    const next = session.data?.user
-      ? toAuthUser(session.data.user as AuthUser & { role?: string | null })
-      : null
+      const session = await authClient.getSession()
+      const next = session.data?.user
+        ? toAuthUser(session.data.user as AuthUser & { role?: string | null })
+        : null
 
-    if (!next) {
-      await authClient.signOut()
-      return false
+      if (!next) {
+        await authClient.signOut()
+        return {
+          ok: false,
+          error:
+            'Signed in, but this account is not an admin. Run npm run create:admin in fitforge-backend.',
+        }
+      }
+
+      setUser(next)
+      return { ok: true }
+    } catch {
+      return {
+        ok: false,
+        error:
+          'Backend is not reachable or auth failed. Restart fitforge-backend (npm run start:dev) and try again.',
+      }
     }
-
-    setUser(next)
-    return true
   }
 
   async function logout() {

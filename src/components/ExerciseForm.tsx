@@ -3,6 +3,7 @@ import { useState } from 'react'
 import FileUpload from './FileUpload'
 
 import { api } from '../lib/api'
+import type { MediaUploadKind } from '../lib/blob-config'
 import { saveExercise } from '../utils/exerciseStorage'
 
 import type { Exercise, ExerciseFormData, MediaField, MediaPreviews } from '../types/exercise'
@@ -113,15 +114,19 @@ export default function ExerciseForm({ exercise, onSaved, onCancel }: ExerciseFo
 
   function handleFileSelect(field: MediaField, file: File) {
 
-    const maxSize = 10 * 1024 * 1024
+    const maxSize =
+      field === 'video' ? 50 * 1024 * 1024 : 10 * 1024 * 1024
 
-    if (field !== 'video' && file.size > maxSize) {
+    if (file.size > maxSize) {
 
       setErrors((prev) => ({
 
         ...prev,
 
-        [field]: 'File too large (max 10MB)',
+        [field]:
+          field === 'video'
+            ? 'File too large (max 50MB)'
+            : 'File too large (max 10MB)',
 
       }))
 
@@ -189,9 +194,12 @@ export default function ExerciseForm({ exercise, onSaved, onCancel }: ExerciseFo
 
 
 
-  async function resolveMedia(field: MediaField): Promise<string> {
+  async function resolveMedia(
+    field: MediaField,
+    kind: MediaUploadKind,
+  ): Promise<string> {
     if (form[field]) {
-      const { url } = await api.uploadMedia(form[field]!)
+      const { url } = await api.uploadMedia(form[field]!, kind)
       return url
     }
 
@@ -220,11 +228,11 @@ export default function ExerciseForm({ exercise, onSaved, onCancel }: ExerciseFo
 
         instructions: form.instructions.trim(),
 
-        frontMuscleImage: await resolveMedia('frontMuscleImage'),
+        frontMuscleImage: await resolveMedia('frontMuscleImage', 'image'),
 
-        backMuscleImage: await resolveMedia('backMuscleImage'),
+        backMuscleImage: await resolveMedia('backMuscleImage', 'image'),
 
-        video: await resolveMedia('video'),
+        video: await resolveMedia('video', 'video'),
 
         createdAt: isEdit ? exercise!.createdAt : new Date().toISOString(),
 
