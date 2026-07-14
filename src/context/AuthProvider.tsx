@@ -1,49 +1,93 @@
-import { useState, type ReactNode } from 'react'
-import { AuthContext, type AuthUser } from './auth-context'
-import { ApiError, api } from '../lib/api'
+import { useEffect, useState, type ReactNode } from 'react'
+import { AuthContext, type AuthRole, type AuthUser } from './auth-context'
+import { authClient } from '../lib/auth-client'
 
-const STORAGE_KEY = 'fitforge-auth'
+function hasAdminRole(role: unknown): boolean {
+  if (typeof role !== 'string') return false
+  return role
+    .split(',')
+    .map((part) => part.trim())
+    .includes('admin')
+}
 
-function readStoredUser(): AuthUser | null {
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as AuthUser
-  } catch {
-    return null
+function toAuthUser(user: {
+  id: string
+  name: string
+  email: string
+  role?: string | null
+}): AuthUser | null {
+  if (!hasAdminRole(user.role)) return null
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: 'admin' as AuthRole,
   }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(readStoredUser)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  function persist(next: AuthUser) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    setUser(next)
-  }
+  useEffect(() => {
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const session = await authClient.getSession()
+        if (cancelled) return
+        const next = session.data?.user
+          ? toAuthUser(session.data.user as AuthUser & { role?: string | null })
+          : null
+        if (!next && session.data?.user) {
+          await authClient.signOut()
+        }
+        setUser(next)
+      } catch {
+        if (!cancelled) setUser(null)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function login(email: string, password: string): Promise<boolean> {
-    try {
-      const result = await api.login(email, password)
-      persist({
-        name: result.user.name,
-        email: result.user.email,
-        role: result.user.role.toLowerCase() as AuthUser['role'],
-      })
-      return true
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) return false
-      throw error
+    const result = await authClient.signIn.email({ email, password })
+    if (result.error) return false
+
+    const session = await authClient.getSession()
+    const next = session.data?.user
+      ? toAuthUser(session.data.user as AuthUser & { role?: string | null })
+      : null
+
+    if (!next) {
+      await authClient.signOut()
+      return false
     }
+
+    setUser(next)
+    return true
   }
 
-  function logout() {
-    localStorage.removeItem(STORAGE_KEY)
+  async function logout() {
+    await authClient.signOut()
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: user !== null, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: user !== null,
+        isLoading,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

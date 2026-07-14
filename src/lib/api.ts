@@ -1,6 +1,7 @@
 import { upload as uploadToBlob } from '@vercel/blob/client'
+import { API_BASE_URL } from './auth-client'
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
+export { API_BASE_URL }
 
 export interface UploadMediaResponse {
   url: string
@@ -17,6 +18,7 @@ class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(init?.headers ?? {}),
@@ -40,26 +42,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T
 }
 
-export interface ApiAuthUser {
-  id: string
-  name: string
-  email: string
-  role: 'OWNER' | 'ADMIN' | 'TRAINER'
-}
-
-export interface ApiLoginResponse {
-  user: ApiAuthUser
-}
-
-export interface ApiAdmin {
-  id: string
-  name: string
-  email: string
-  role: 'OWNER' | 'ADMIN' | 'TRAINER'
-  createdAt: string
-  updatedAt: string
-}
-
 export interface ApiExercise {
   id: string
   name: string
@@ -71,32 +53,11 @@ export interface ApiExercise {
   updatedAt: string
 }
 
+const ADMIN_EXERCISES = '/api/v1/admin/exercises'
+
 export const api = {
-  login(email: string, password: string) {
-    return request<ApiLoginResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    })
-  },
-  getAdmins() {
-    return request<ApiAdmin[]>('/admins')
-  },
-  createAdmin(payload: {
-    name: string
-    email: string
-    password: string
-    role: 'OWNER' | 'ADMIN' | 'TRAINER'
-  }) {
-    return request<ApiAdmin>('/admins', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-  },
-  deleteAdmin(id: string) {
-    return request<{ success: boolean }>(`/admins/${id}`, { method: 'DELETE' })
-  },
   getExercises() {
-    return request<ApiExercise[]>('/exercises')
+    return request<ApiExercise[]>(ADMIN_EXERCISES)
   },
   createExercise(payload: {
     id?: string
@@ -106,19 +67,24 @@ export const api = {
     backMuscleImage: string
     video: string
   }) {
-    return request<ApiExercise>('/exercises', {
+    return request<ApiExercise>(ADMIN_EXERCISES, {
       method: 'POST',
       body: JSON.stringify(payload),
     })
   },
-  updateExercise(id: string, payload: Partial<Omit<ApiExercise, 'id' | 'createdAt' | 'updatedAt'>>) {
-    return request<ApiExercise>(`/exercises/${id}`, {
+  updateExercise(
+    id: string,
+    payload: Partial<Omit<ApiExercise, 'id' | 'createdAt' | 'updatedAt'>>,
+  ) {
+    return request<ApiExercise>(`${ADMIN_EXERCISES}/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     })
   },
   deleteExercise(id: string) {
-    return request<{ success: boolean }>(`/exercises/${id}`, { method: 'DELETE' })
+    return request<{ id: string; deleted: boolean }>(`${ADMIN_EXERCISES}/${id}`, {
+      method: 'DELETE',
+    })
   },
   async uploadMedia(file: File): Promise<UploadMediaResponse> {
     const handleUploadUrl =

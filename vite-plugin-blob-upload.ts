@@ -17,7 +17,7 @@ export function blobUploadDevApi(): Plugin {
     name: 'blob-upload-dev-api',
     configureServer(server) {
       loadEnv({ path: '.env.local' });
-      loadEnv({ path: 'backend/.env' });
+      loadEnv({ path: '.env' });
 
       server.middlewares.use(async (req, res, next) => {
         if (req.url !== '/api/media/upload' || req.method !== 'POST') {
