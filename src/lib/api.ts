@@ -65,8 +65,20 @@ export interface ApiEquipment {
   updatedAt: string
 }
 
+export interface ApiTrainer {
+  id: string
+  name: string
+  specialty: string
+  experienceYears: number
+  description: string | null
+  imageUrl: string
+  createdAt: string
+  updatedAt: string
+}
+
 const ADMIN_EXERCISES = '/api/v1/admin/exercises'
 const ADMIN_EQUIPMENT = '/api/v1/admin/equipment'
+const ADMIN_TRAINERS = '/api/v1/admin/trainers'
 
 export const api = {
   getExercises() {
@@ -127,6 +139,36 @@ export const api = {
   },
   deleteEquipment(id: string) {
     return request<{ id: string; deleted: boolean }>(`${ADMIN_EQUIPMENT}/${id}`, {
+      method: 'DELETE',
+    })
+  },
+  getTrainers() {
+    return request<ApiTrainer[]>(ADMIN_TRAINERS)
+  },
+  createTrainer(payload: {
+    id?: string
+    name: string
+    specialty: string
+    experienceYears: number
+    description: string
+    imageUrl: string
+  }) {
+    return request<ApiTrainer>(ADMIN_TRAINERS, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  updateTrainer(
+    id: string,
+    payload: Partial<Omit<ApiTrainer, 'id' | 'createdAt' | 'updatedAt'>>,
+  ) {
+    return request<ApiTrainer>(`${ADMIN_TRAINERS}/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+  deleteTrainer(id: string) {
+    return request<{ id: string; deleted: boolean }>(`${ADMIN_TRAINERS}/${id}`, {
       method: 'DELETE',
     })
   },

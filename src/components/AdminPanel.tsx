@@ -1,37 +1,63 @@
 import type { Equipment } from '../types/equipment'
 import type { Exercise } from '../types/exercise'
+import type { Trainer } from '../types/trainer'
 import { useAuth } from '../hooks/useAuth'
 import { getAllEquipment } from '../utils/equipmentStorage'
 import { getAllExercises } from '../utils/exerciseStorage'
+import { getAllTrainers } from '../utils/trainerStorage'
 import EquipmentForm from './EquipmentForm'
 import EquipmentList from './EquipmentList'
 import ExerciseForm from './ExerciseForm'
 import ExerciseList from './ExerciseList'
+import TrainerForm from './TrainerForm'
+import TrainerList from './TrainerList'
 import ThemeToggle from './ThemeToggle'
 import { useCallback, useEffect, useState } from 'react'
 
-type TabId = 'add' | 'library' | 'add-equipment' | 'equipment-library'
+type TabId =
+  | 'add'
+  | 'library'
+  | 'add-equipment'
+  | 'equipment-library'
+  | 'add-trainer'
+  | 'trainer-library'
 
-const tabs: { id: TabId; label: string; icon: string }[] = [
+const tabs: { id: TabId; label: string; icon: string; group: 'exercises' | 'equipment' | 'trainers' }[] = [
   {
     id: 'add',
     label: 'Add Exercise',
+    group: 'exercises',
     icon: 'M12 4.5v15m7.5-7.5h-15',
   },
   {
     id: 'library',
     label: 'Exercise Library',
+    group: 'exercises',
     icon: 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 5.25v2.25m0-4.5h4.5m-4.5 0v4.5m0-4.5H6m4.5 0h4.5M3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25v2.25A2.25 2.25 0 018.25 21H6a2.25 2.25 0 01-2.25-2.25v-2.25zm9-9A2.25 2.25 0 0114.25 6h2.25A2.25 2.25 0 0118.75 8.25v2.25A2.25 2.25 0 0116.5 12.75h-2.25a2.25 2.25 0 01-2.25-2.25V8.25z',
   },
   {
     id: 'add-equipment',
     label: 'Add Equipment',
+    group: 'equipment',
     icon: 'M12 4.5v15m7.5-7.5h-15',
   },
   {
     id: 'equipment-library',
     label: 'Equipment Library',
+    group: 'equipment',
     icon: 'M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9',
+  },
+  {
+    id: 'add-trainer',
+    label: 'Add Trainer',
+    group: 'trainers',
+    icon: 'M12 4.5v15m7.5-7.5h-15',
+  },
+  {
+    id: 'trainer-library',
+    label: 'Trainer Library',
+    group: 'trainers',
+    icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z',
   },
 ]
 
@@ -52,6 +78,14 @@ const pageMeta: Record<TabId, { title: string; subtitle: string }> = {
     title: 'Equipment Library',
     subtitle: 'Browse and manage all equipment in your library',
   },
+  'add-trainer': {
+    title: 'Add Trainer',
+    subtitle: 'Add trainers with specialty, experience, description, and a profile photo',
+  },
+  'trainer-library': {
+    title: 'Trainer Management',
+    subtitle: 'Browse and manage all trainers',
+  },
 }
 
 export default function AdminPanel() {
@@ -59,8 +93,10 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('add')
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
+  const [trainers, setTrainers] = useState<Trainer[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [loadingEquipment, setLoadingEquipment] = useState(true)
+  const [loadingTrainers, setLoadingTrainers] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
 
   const loadExercises = useCallback(async () => {
@@ -83,10 +119,21 @@ export default function AdminPanel() {
     }
   }, [])
 
+  const loadTrainers = useCallback(async () => {
+    setLoadingTrainers(true)
+    try {
+      const data = await getAllTrainers()
+      setTrainers(data)
+    } finally {
+      setLoadingTrainers(false)
+    }
+  }, [])
+
   useEffect(() => {
     void loadExercises()
     void loadEquipment()
-  }, [loadExercises, loadEquipment])
+    void loadTrainers()
+  }, [loadExercises, loadEquipment, loadTrainers])
 
   function showToast(message: string) {
     setToast(message)
@@ -115,9 +162,69 @@ export default function AdminPanel() {
     showToast('Equipment updated successfully!')
   }
 
+  function handleTrainerSaved() {
+    void loadTrainers()
+    showToast('Trainer saved successfully!')
+    setActiveTab('trainer-library')
+  }
+
+  function handleTrainerUpdated() {
+    void loadTrainers()
+    showToast('Trainer updated successfully!')
+  }
+
   const loading =
     (activeTab === 'library' && loadingExercises) ||
-    (activeTab === 'equipment-library' && loadingEquipment)
+    (activeTab === 'equipment-library' && loadingEquipment) ||
+    (activeTab === 'trainer-library' && loadingTrainers)
+
+  function renderNavGroup(group: 'exercises' | 'equipment' | 'trainers', label: string) {
+    return (
+      <>
+        <p
+          className={`mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle ${
+            group === 'exercises' ? '' : 'mt-5'
+          }`}
+        >
+          {label}
+        </p>
+        {tabs
+          .filter((tab) => tab.group === group)
+          .map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                activeTab === tab.id
+                  ? 'bg-brand-600/15 text-brand-500'
+                  : 'text-fg-muted hover:bg-hover/50 hover:text-fg'
+              }`}
+            >
+              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+              </svg>
+              {tab.label}
+              {tab.id === 'library' && exercises.length > 0 && (
+                <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
+                  {exercises.length}
+                </span>
+              )}
+              {tab.id === 'equipment-library' && equipment.length > 0 && (
+                <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
+                  {equipment.length}
+                </span>
+              )}
+              {tab.id === 'trainer-library' && trainers.length > 0 && (
+                <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
+                  {trainers.length}
+                </span>
+              )}
+            </button>
+          ))}
+      </>
+    )
+  }
 
   return (
     <div className="flex h-svh overflow-hidden bg-surface-900">
@@ -131,67 +238,15 @@ export default function AdminPanel() {
             </div>
             <div>
               <p className="text-sm font-bold text-fg">FitForge</p>
-              <p className="text-xs text-fg-muted">Trainer Admin</p>
+              <p className="text-xs text-fg-muted">Admin</p>
             </div>
           </div>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">
-            Exercises
-          </p>
-          {tabs
-            .filter((tab) => tab.id === 'add' || tab.id === 'library')
-            .map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                  activeTab === tab.id
-                    ? 'bg-brand-600/15 text-brand-500'
-                    : 'text-fg-muted hover:bg-hover/50 hover:text-fg'
-                }`}
-              >
-                <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-                </svg>
-                {tab.label}
-                {tab.id === 'library' && exercises.length > 0 && (
-                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
-                    {exercises.length}
-                  </span>
-                )}
-              </button>
-            ))}
-
-          <p className="mb-2 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">
-            Equipment
-          </p>
-          {tabs
-            .filter((tab) => tab.id === 'add-equipment' || tab.id === 'equipment-library')
-            .map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                  activeTab === tab.id
-                    ? 'bg-brand-600/15 text-brand-500'
-                    : 'text-fg-muted hover:bg-hover/50 hover:text-fg'
-                }`}
-              >
-                <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-                </svg>
-                {tab.label}
-                {tab.id === 'equipment-library' && equipment.length > 0 && (
-                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
-                    {equipment.length}
-                  </span>
-                )}
-              </button>
-            ))}
+          {renderNavGroup('exercises', 'Exercises')}
+          {renderNavGroup('equipment', 'Equipment')}
+          {renderNavGroup('trainers', 'Trainer Management')}
         </nav>
 
         <div className="space-y-3 border-t border-border p-4">
@@ -277,6 +332,10 @@ export default function AdminPanel() {
             <div className="mx-auto max-w-3xl">
               <EquipmentForm onSaved={handleEquipmentSaved} />
             </div>
+          ) : activeTab === 'add-trainer' ? (
+            <div className="mx-auto max-w-3xl">
+              <TrainerForm onSaved={handleTrainerSaved} />
+            </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-20">
               <svg className="h-8 w-8 animate-spin text-brand-500" viewBox="0 0 24 24" fill="none">
@@ -296,12 +355,20 @@ export default function AdminPanel() {
                 onUpdated={handleExerciseUpdated}
               />
             </div>
-          ) : (
+          ) : activeTab === 'equipment-library' ? (
             <div className="mx-auto max-w-3xl">
               <EquipmentList
                 equipment={equipment}
                 onRefresh={loadEquipment}
                 onUpdated={handleEquipmentUpdated}
+              />
+            </div>
+          ) : (
+            <div className="mx-auto max-w-3xl">
+              <TrainerList
+                trainers={trainers}
+                onRefresh={loadTrainers}
+                onUpdated={handleTrainerUpdated}
               />
             </div>
           )}
