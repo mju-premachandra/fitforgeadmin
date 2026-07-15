@@ -1,21 +1,39 @@
+import type { Equipment } from '../types/equipment'
 import type { Exercise } from '../types/exercise'
 import { useAuth } from '../hooks/useAuth'
+import { getAllEquipment } from '../utils/equipmentStorage'
 import { getAllExercises } from '../utils/exerciseStorage'
+import EquipmentForm from './EquipmentForm'
+import EquipmentList from './EquipmentList'
 import ExerciseForm from './ExerciseForm'
 import ExerciseList from './ExerciseList'
 import ThemeToggle from './ThemeToggle'
 import { useCallback, useEffect, useState } from 'react'
 
+type TabId = 'add' | 'library' | 'add-equipment' | 'equipment-library'
+
 const tabs: { id: TabId; label: string; icon: string }[] = [
-  { id: 'add', label: 'Add Exercise', icon: 'M12 4.5v15m7.5-7.5h-15' },
+  {
+    id: 'add',
+    label: 'Add Exercise',
+    icon: 'M12 4.5v15m7.5-7.5h-15',
+  },
   {
     id: 'library',
     label: 'Exercise Library',
     icon: 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 5.25v2.25m0-4.5h4.5m-4.5 0v4.5m0-4.5H6m4.5 0h4.5M3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25v2.25A2.25 2.25 0 018.25 21H6a2.25 2.25 0 01-2.25-2.25v-2.25zm9-9A2.25 2.25 0 0114.25 6h2.25A2.25 2.25 0 0118.75 8.25v2.25A2.25 2.25 0 0116.5 12.75h-2.25a2.25 2.25 0 01-2.25-2.25V8.25z',
   },
+  {
+    id: 'add-equipment',
+    label: 'Add Equipment',
+    icon: 'M12 4.5v15m7.5-7.5h-15',
+  },
+  {
+    id: 'equipment-library',
+    label: 'Equipment Library',
+    icon: 'M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9',
+  },
 ]
-
-type TabId = 'add' | 'library'
 
 const pageMeta: Record<TabId, { title: string; subtitle: string }> = {
   add: {
@@ -26,44 +44,80 @@ const pageMeta: Record<TabId, { title: string; subtitle: string }> = {
     title: 'Exercise Library',
     subtitle: 'Browse and manage all exercises in your library',
   },
+  'add-equipment': {
+    title: 'Add Equipment',
+    subtitle: 'Create equipment with a category, optional picture, and description',
+  },
+  'equipment-library': {
+    title: 'Equipment Library',
+    subtitle: 'Browse and manage all equipment in your library',
+  },
 }
 
 export default function AdminPanel() {
   const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState<TabId>('add')
   const [exercises, setExercises] = useState<Exercise[]>([])
-  const [loading, setLoading] = useState(true)
+  const [equipment, setEquipment] = useState<Equipment[]>([])
+  const [loadingExercises, setLoadingExercises] = useState(true)
+  const [loadingEquipment, setLoadingEquipment] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
 
   const loadExercises = useCallback(async () => {
-    setLoading(true)
+    setLoadingExercises(true)
     try {
       const data = await getAllExercises()
       setExercises(data)
     } finally {
-      setLoading(false)
+      setLoadingExercises(false)
+    }
+  }, [])
+
+  const loadEquipment = useCallback(async () => {
+    setLoadingEquipment(true)
+    try {
+      const data = await getAllEquipment()
+      setEquipment(data)
+    } finally {
+      setLoadingEquipment(false)
     }
   }, [])
 
   useEffect(() => {
     void loadExercises()
-  }, [loadExercises])
+    void loadEquipment()
+  }, [loadExercises, loadEquipment])
 
   function showToast(message: string) {
     setToast(message)
     setTimeout(() => setToast(null), 3000)
   }
 
-  function handleSaved() {
+  function handleExerciseSaved() {
     void loadExercises()
     showToast('Exercise saved successfully!')
     setActiveTab('library')
   }
 
-  function handleUpdated() {
+  function handleExerciseUpdated() {
     void loadExercises()
     showToast('Exercise updated successfully!')
   }
+
+  function handleEquipmentSaved() {
+    void loadEquipment()
+    showToast('Equipment saved successfully!')
+    setActiveTab('equipment-library')
+  }
+
+  function handleEquipmentUpdated() {
+    void loadEquipment()
+    showToast('Equipment updated successfully!')
+  }
+
+  const loading =
+    (activeTab === 'library' && loadingExercises) ||
+    (activeTab === 'equipment-library' && loadingEquipment)
 
   return (
     <div className="flex h-svh overflow-hidden bg-surface-900">
@@ -82,29 +136,62 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 p-4">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                activeTab === tab.id
-                  ? 'bg-brand-600/15 text-brand-500'
-                  : 'text-fg-muted hover:bg-hover/50 hover:text-fg'
-              }`}
-            >
-              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-              </svg>
-              {tab.label}
-              {tab.id === 'library' && exercises.length > 0 && (
-                <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
-                  {exercises.length}
-                </span>
-              )}
-            </button>
-          ))}
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">
+            Exercises
+          </p>
+          {tabs
+            .filter((tab) => tab.id === 'add' || tab.id === 'library')
+            .map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                  activeTab === tab.id
+                    ? 'bg-brand-600/15 text-brand-500'
+                    : 'text-fg-muted hover:bg-hover/50 hover:text-fg'
+                }`}
+              >
+                <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+                </svg>
+                {tab.label}
+                {tab.id === 'library' && exercises.length > 0 && (
+                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
+                    {exercises.length}
+                  </span>
+                )}
+              </button>
+            ))}
+
+          <p className="mb-2 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">
+            Equipment
+          </p>
+          {tabs
+            .filter((tab) => tab.id === 'add-equipment' || tab.id === 'equipment-library')
+            .map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                  activeTab === tab.id
+                    ? 'bg-brand-600/15 text-brand-500'
+                    : 'text-fg-muted hover:bg-hover/50 hover:text-fg'
+                }`}
+              >
+                <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+                </svg>
+                {tab.label}
+                {tab.id === 'equipment-library' && equipment.length > 0 && (
+                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary">
+                    {equipment.length}
+                  </span>
+                )}
+              </button>
+            ))}
         </nav>
 
         <div className="space-y-3 border-t border-border p-4">
@@ -148,13 +235,13 @@ export default function AdminPanel() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex gap-2 lg:hidden">
+              <div className="flex max-w-[60vw] gap-2 overflow-x-auto lg:hidden">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium ${
                       activeTab === tab.id ? 'bg-brand-600 text-white' : 'bg-muted text-fg-secondary'
                     }`}
                   >
@@ -184,7 +271,11 @@ export default function AdminPanel() {
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           {activeTab === 'add' ? (
             <div className="mx-auto max-w-3xl">
-              <ExerciseForm onSaved={handleSaved} />
+              <ExerciseForm onSaved={handleExerciseSaved} />
+            </div>
+          ) : activeTab === 'add-equipment' ? (
+            <div className="mx-auto max-w-3xl">
+              <EquipmentForm onSaved={handleEquipmentSaved} />
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-20">
@@ -197,9 +288,21 @@ export default function AdminPanel() {
                 />
               </svg>
             </div>
+          ) : activeTab === 'library' ? (
+            <div className="mx-auto max-w-3xl">
+              <ExerciseList
+                exercises={exercises}
+                onRefresh={loadExercises}
+                onUpdated={handleExerciseUpdated}
+              />
+            </div>
           ) : (
             <div className="mx-auto max-w-3xl">
-              <ExerciseList exercises={exercises} onRefresh={loadExercises} onUpdated={handleUpdated} />
+              <EquipmentList
+                equipment={equipment}
+                onRefresh={loadEquipment}
+                onUpdated={handleEquipmentUpdated}
+              />
             </div>
           )}
         </main>

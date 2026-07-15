@@ -25,6 +25,4 @@ export interface MediaPreviews {
   video: string | null
 }
 
-export type TabId = 'add' | 'library'
-
 export type MediaTab = 'front' | 'back' | 'video'

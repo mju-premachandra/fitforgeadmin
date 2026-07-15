@@ -54,7 +54,19 @@ export interface ApiExercise {
   updatedAt: string
 }
 
+export interface ApiEquipment {
+  id: string
+  slug: string
+  name: string
+  category: string
+  imageUrl: string
+  description: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 const ADMIN_EXERCISES = '/api/v1/admin/exercises'
+const ADMIN_EQUIPMENT = '/api/v1/admin/equipment'
 
 export const api = {
   getExercises() {
@@ -84,6 +96,37 @@ export const api = {
   },
   deleteExercise(id: string) {
     return request<{ id: string; deleted: boolean }>(`${ADMIN_EXERCISES}/${id}`, {
+      method: 'DELETE',
+    })
+  },
+  getEquipment() {
+    return request<ApiEquipment[]>(ADMIN_EQUIPMENT)
+  },
+  createEquipment(payload: {
+    id?: string
+    name: string
+    category: string
+    imageUrl?: string
+    description?: string
+  }) {
+    return request<ApiEquipment>(ADMIN_EQUIPMENT, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  updateEquipment(
+    id: string,
+    payload: Partial<
+      Omit<ApiEquipment, 'id' | 'slug' | 'createdAt' | 'updatedAt'>
+    >,
+  ) {
+    return request<ApiEquipment>(`${ADMIN_EQUIPMENT}/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+  deleteEquipment(id: string) {
+    return request<{ id: string; deleted: boolean }>(`${ADMIN_EQUIPMENT}/${id}`, {
       method: 'DELETE',
     })
   },
