@@ -8,17 +8,19 @@ const IMAGE_PREFIX = 'exercises/images/'
 const VIDEO_PREFIX = 'exercises/videos/'
 const EQUIPMENT_IMAGE_PREFIX = 'equipment/images/'
 const TRAINER_IMAGE_PREFIX = 'trainers/images/'
+const MUSCLE_IMAGE_PREFIX = 'muscles/images/'
 
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024
 const VIDEO_MAX_BYTES = 50 * 1024 * 1024
 
 function uploadKindFromPath(
   pathname: string,
-): 'image' | 'video' | 'equipment-image' | 'trainer-image' | null {
+): 'image' | 'video' | 'equipment-image' | 'trainer-image' | 'muscle-image' | null {
   if (pathname.startsWith(VIDEO_PREFIX)) return 'video'
   if (pathname.startsWith(IMAGE_PREFIX)) return 'image'
   if (pathname.startsWith(EQUIPMENT_IMAGE_PREFIX)) return 'equipment-image'
   if (pathname.startsWith(TRAINER_IMAGE_PREFIX)) return 'trainer-image'
+  if (pathname.startsWith(MUSCLE_IMAGE_PREFIX)) return 'muscle-image'
   return null
 }
 
@@ -43,7 +45,7 @@ export async function handleBlobUpload(
       const kind = uploadKindFromPath(pathname)
       if (!kind) {
         throw new Error(
-          'Upload path must start with exercises/images/, exercises/videos/, equipment/images/, or trainers/images/',
+          'Upload path must start with exercises/images/, exercises/videos/, equipment/images/, trainers/images/, or muscles/images/',
         )
       }
 

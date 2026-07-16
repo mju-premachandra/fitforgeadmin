@@ -76,9 +76,34 @@ export interface ApiTrainer {
   updatedAt: string
 }
 
+export interface ApiMuscle {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  imageUrl: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ApiUser {
+  id: string
+  name: string
+  email: string
+  emailVerified: boolean
+  role: 'user' | 'admin'
+  banned: boolean
+  banReason: string | null
+  image: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 const ADMIN_EXERCISES = '/api/v1/admin/exercises'
 const ADMIN_EQUIPMENT = '/api/v1/admin/equipment'
 const ADMIN_TRAINERS = '/api/v1/admin/trainers'
+const ADMIN_MUSCLES = '/api/v1/admin/muscles'
+const ADMIN_USERS = '/api/v1/admin/users'
 
 export const api = {
   getExercises() {
@@ -170,6 +195,46 @@ export const api = {
   deleteTrainer(id: string) {
     return request<{ id: string; deleted: boolean }>(`${ADMIN_TRAINERS}/${id}`, {
       method: 'DELETE',
+    })
+  },
+  getMuscles() {
+    return request<ApiMuscle[]>(ADMIN_MUSCLES)
+  },
+  createMuscle(payload: {
+    id?: string
+    name: string
+    description?: string
+    imageUrl: string
+  }) {
+    return request<ApiMuscle>(ADMIN_MUSCLES, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  updateMuscle(
+    id: string,
+    payload: Partial<Omit<ApiMuscle, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>,
+  ) {
+    return request<ApiMuscle>(`${ADMIN_MUSCLES}/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+  deleteMuscle(id: string) {
+    return request<{ id: string; deleted: boolean }>(`${ADMIN_MUSCLES}/${id}`, {
+      method: 'DELETE',
+    })
+  },
+  getUsers() {
+    return request<ApiUser[]>(ADMIN_USERS)
+  },
+  updateUser(
+    id: string,
+    payload: Partial<Pick<ApiUser, 'role' | 'banned' | 'banReason'>>,
+  ) {
+    return request<ApiUser>(`${ADMIN_USERS}/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
     })
   },
   async uploadMedia(
