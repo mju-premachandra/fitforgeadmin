@@ -99,13 +99,30 @@ export interface ApiUser {
   updatedAt: string
 }
 
+export interface ApiUserWorkoutStat {
+  userId: string
+  name: string
+  email: string
+  workoutsCompleted: number
+}
+
+export interface ApiDashboardStats {
+  totalNormalUsers: number
+  totalCoaches: number
+  workoutsByUser: ApiUserWorkoutStat[]
+}
+
 const ADMIN_EXERCISES = '/api/v1/admin/exercises'
 const ADMIN_EQUIPMENT = '/api/v1/admin/equipment'
 const ADMIN_TRAINERS = '/api/v1/admin/trainers'
 const ADMIN_MUSCLES = '/api/v1/admin/muscles'
 const ADMIN_USERS = '/api/v1/admin/users'
+const ADMIN_DASHBOARD = '/api/v1/admin/dashboard'
 
 export const api = {
+  getDashboardStats() {
+    return request<ApiDashboardStats>(`${ADMIN_DASHBOARD}/stats`)
+  },
   getExercises() {
     return request<ApiExercise[]>(ADMIN_EXERCISES)
   },

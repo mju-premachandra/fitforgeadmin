@@ -9,6 +9,7 @@ import { getAllExercises } from '../utils/exerciseStorage'
 import { getAllMuscles } from '../utils/muscleStorage'
 import { getAllTrainers } from '../utils/trainerStorage'
 import { getAllUsers } from '../utils/userStorage'
+import Dashboard from './Dashboard'
 import EquipmentForm from './EquipmentForm'
 import EquipmentList from './EquipmentList'
 import ExerciseForm from './ExerciseForm'
@@ -22,6 +23,7 @@ import ThemeToggle from './ThemeToggle'
 import { useCallback, useEffect, useState } from 'react'
 
 type TabId =
+  | 'dashboard'
   | 'add'
   | 'library'
   | 'add-equipment'
@@ -32,9 +34,15 @@ type TabId =
   | 'muscle-library'
   | 'users'
 
-type TabGroup = 'exercises' | 'equipment' | 'trainers' | 'muscles' | 'users'
+type TabGroup = 'overview' | 'exercises' | 'equipment' | 'trainers' | 'muscles' | 'users'
 
 const tabs: { id: TabId; label: string; icon: string; group: TabGroup }[] = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    group: 'overview',
+    icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
+  },
   { id: 'add', label: 'Add Exercise', group: 'exercises', icon: 'M12 4.5v15m7.5-7.5h-15' },
   {
     id: 'library',
@@ -72,6 +80,10 @@ const tabs: { id: TabId; label: string; icon: string; group: TabGroup }[] = [
 ]
 
 const pageMeta: Record<TabId, { title: string; subtitle: string }> = {
+  dashboard: {
+    title: 'Dashboard',
+    subtitle: 'Users, coaches, and workout completion overview',
+  },
   add: {
     title: 'Add New Exercise',
     subtitle: 'Create exercises with instructions, muscle diagrams, and demo videos',
@@ -111,6 +123,7 @@ const pageMeta: Record<TabId, { title: string; subtitle: string }> = {
 }
 
 const groupLabels: Record<TabGroup, string> = {
+  overview: 'Overview',
   exercises: 'Exercises',
   equipment: 'Equipment',
   trainers: 'Trainer Management',
@@ -120,7 +133,7 @@ const groupLabels: Record<TabGroup, string> = {
 
 export default function AdminPanel() {
   const { user, logout } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabId>('add')
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard')
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [trainers, setTrainers] = useState<Trainer[]>([])
@@ -255,7 +268,7 @@ export default function AdminPanel() {
       <>
         <p
           className={`mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle ${
-            group === 'exercises' ? '' : 'mt-5'
+            group === 'overview' ? '' : 'mt-5'
           }`}
         >
           {groupLabels[group]}
@@ -289,6 +302,9 @@ export default function AdminPanel() {
   }
 
   function renderMainContent() {
+    if (activeTab === 'dashboard') {
+      return <Dashboard />
+    }
     if (activeTab === 'add') {
       return <ExerciseForm onSaved={handleExerciseSaved} />
     }
@@ -376,6 +392,7 @@ export default function AdminPanel() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          {renderNavGroup('overview')}
           {renderNavGroup('exercises')}
           {renderNavGroup('equipment')}
           {renderNavGroup('trainers')}
