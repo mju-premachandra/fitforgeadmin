@@ -76,6 +76,15 @@ export interface ApiTrainer {
   updatedAt: string
 }
 
+export interface ApiTrainerListResponse {
+  items: ApiTrainer[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  specialties: string[]
+}
+
 export interface ApiMuscle {
   id: string
   slug: string
@@ -184,8 +193,21 @@ export const api = {
       method: 'DELETE',
     })
   },
-  getTrainers() {
-    return request<ApiTrainer[]>(ADMIN_TRAINERS)
+  getTrainers(params?: {
+    search?: string
+    specialty?: string
+    page?: number
+    limit?: number
+  }) {
+    const query = new URLSearchParams()
+    if (params?.search?.trim()) query.set('search', params.search.trim())
+    if (params?.specialty?.trim()) query.set('specialty', params.specialty.trim())
+    if (params?.page) query.set('page', String(params.page))
+    if (params?.limit) query.set('limit', String(params.limit))
+    const qs = query.toString()
+    return request<ApiTrainerListResponse>(
+      `${ADMIN_TRAINERS}${qs ? `?${qs}` : ''}`,
+    )
   },
   createTrainer(payload: {
     id?: string

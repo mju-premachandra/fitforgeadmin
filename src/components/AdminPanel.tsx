@@ -1,13 +1,12 @@
 import type { Equipment } from '../types/equipment'
 import type { Exercise } from '../types/exercise'
 import type { Muscle } from '../types/muscle'
-import type { Trainer } from '../types/trainer'
 import type { ManagedUser } from '../types/user'
 import { useAuth } from '../hooks/useAuth'
 import { getAllEquipment } from '../utils/equipmentStorage'
 import { getAllExercises } from '../utils/exerciseStorage'
 import { getAllMuscles } from '../utils/muscleStorage'
-import { getAllTrainers } from '../utils/trainerStorage'
+import { getTrainerCount } from '../utils/trainerStorage'
 import { getAllUsers } from '../utils/userStorage'
 import Dashboard from './Dashboard'
 import EquipmentForm from './EquipmentForm'
@@ -136,12 +135,11 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
-  const [trainers, setTrainers] = useState<Trainer[]>([])
+  const [trainerCount, setTrainerCount] = useState(0)
   const [muscles, setMuscles] = useState<Muscle[]>([])
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [loadingEquipment, setLoadingEquipment] = useState(true)
-  const [loadingTrainers, setLoadingTrainers] = useState(true)
   const [loadingMuscles, setLoadingMuscles] = useState(true)
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
@@ -165,11 +163,10 @@ export default function AdminPanel() {
   }, [])
 
   const loadTrainers = useCallback(async () => {
-    setLoadingTrainers(true)
     try {
-      setTrainers(await getAllTrainers())
-    } finally {
-      setLoadingTrainers(false)
+      setTrainerCount(await getTrainerCount())
+    } catch {
+      setTrainerCount(0)
     }
   }, [])
 
@@ -251,7 +248,7 @@ export default function AdminPanel() {
   const counts: Partial<Record<TabId, number>> = {
     library: exercises.length,
     'equipment-library': equipment.length,
-    'trainer-library': trainers.length,
+    'trainer-library': trainerCount,
     'muscle-library': muscles.length,
     users: users.length,
   }
@@ -259,7 +256,6 @@ export default function AdminPanel() {
   const loading =
     (activeTab === 'library' && loadingExercises) ||
     (activeTab === 'equipment-library' && loadingEquipment) ||
-    (activeTab === 'trainer-library' && loadingTrainers) ||
     (activeTab === 'muscle-library' && loadingMuscles) ||
     (activeTab === 'users' && loadingUsers)
 
@@ -348,7 +344,6 @@ export default function AdminPanel() {
     if (activeTab === 'trainer-library') {
       return (
         <TrainerList
-          trainers={trainers}
           onRefresh={loadTrainers}
           onUpdated={handleTrainerUpdated}
         />
