@@ -121,12 +121,43 @@ export interface ApiDashboardStats {
   workoutsByUser: ApiUserWorkoutStat[]
 }
 
+export type ChallengeType =
+  | 'workout_count'
+  | 'totalVolume'
+  | 'streak_days'
+  | 'water_goal'
+
+export interface ApiChallenge {
+  id: string
+  title: string
+  description: string | null
+  challengeType: ChallengeType
+  target: number
+  isOfficial: boolean
+  startDate: string | null
+  endDate: string | null
+  participantCount: number
+  creator: { id: string; name: string; email: string }
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ApiChallengeParticipant {
+  id: string
+  userId: string
+  name: string
+  email: string
+  progress: number
+  joinedAt: string
+}
+
 const ADMIN_EXERCISES = '/api/v1/admin/exercises'
 const ADMIN_EQUIPMENT = '/api/v1/admin/equipment'
 const ADMIN_TRAINERS = '/api/v1/admin/trainers'
 const ADMIN_MUSCLES = '/api/v1/admin/muscles'
 const ADMIN_USERS = '/api/v1/admin/users'
 const ADMIN_DASHBOARD = '/api/v1/admin/dashboard'
+const ADMIN_CHALLENGES = '/api/v1/admin/challenges'
 
 export const api = {
   getDashboardStats() {
@@ -274,6 +305,50 @@ export const api = {
     return request<ApiUser>(`${ADMIN_USERS}/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
+    })
+  },
+  getChallenges(params?: { scope?: 'all' | 'official' | 'user'; search?: string }) {
+    const query = new URLSearchParams()
+    if (params?.scope) query.set('scope', params.scope)
+    if (params?.search?.trim()) query.set('search', params.search.trim())
+    const qs = query.toString()
+    return request<ApiChallenge[]>(`${ADMIN_CHALLENGES}${qs ? `?${qs}` : ''}`)
+  },
+  createChallenge(payload: {
+    title: string
+    description?: string
+    challengeType: ChallengeType
+    target: number
+    startDate?: string
+    endDate?: string
+  }) {
+    return request<ApiChallenge>(ADMIN_CHALLENGES, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  updateChallenge(
+    id: string,
+    payload: Partial<{
+      title: string
+      description: string
+      challengeType: ChallengeType
+      target: number
+      startDate: string | null
+      endDate: string | null
+    }>,
+  ) {
+    return request<ApiChallenge>(`${ADMIN_CHALLENGES}/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+  getChallengeParticipants(id: string) {
+    return request<ApiChallengeParticipant[]>(`${ADMIN_CHALLENGES}/${id}/participants`)
+  },
+  deleteChallenge(id: string) {
+    return request<{ id: string; deleted: boolean }>(`${ADMIN_CHALLENGES}/${id}`, {
+      method: 'DELETE',
     })
   },
   async uploadMedia(

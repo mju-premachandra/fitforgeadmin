@@ -6,9 +6,12 @@ import { useAuth } from '../hooks/useAuth'
 import { getAllEquipment } from '../utils/equipmentStorage'
 import { getAllExercises } from '../utils/exerciseStorage'
 import { getAllMuscles } from '../utils/muscleStorage'
+import { getChallengeCount } from '../utils/challengeStorage'
 import { getTrainerCount } from '../utils/trainerStorage'
 import { getAllUsers } from '../utils/userStorage'
 import Dashboard from './Dashboard'
+import ChallengeForm from './ChallengeForm'
+import ChallengeList from './ChallengeList'
 import EquipmentForm from './EquipmentForm'
 import EquipmentList from './EquipmentList'
 import ExerciseForm from './ExerciseForm'
@@ -31,9 +34,18 @@ type TabId =
   | 'trainer-library'
   | 'add-muscle'
   | 'muscle-library'
+  | 'add-challenge'
+  | 'challenge-library'
   | 'users'
 
-type TabGroup = 'overview' | 'exercises' | 'equipment' | 'trainers' | 'muscles' | 'users'
+type TabGroup =
+  | 'overview'
+  | 'exercises'
+  | 'equipment'
+  | 'trainers'
+  | 'muscles'
+  | 'challenges'
+  | 'users'
 
 const tabs: { id: TabId; label: string; icon: string; group: TabGroup }[] = [
   {
@@ -69,6 +81,18 @@ const tabs: { id: TabId; label: string; icon: string; group: TabGroup }[] = [
     label: 'Muscle Library',
     group: 'muscles',
     icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z',
+  },
+  {
+    id: 'add-challenge',
+    label: 'Create Challenge',
+    group: 'challenges',
+    icon: 'M12 4.5v15m7.5-7.5h-15',
+  },
+  {
+    id: 'challenge-library',
+    label: 'Challenge Moderation',
+    group: 'challenges',
+    icon: 'M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-4.5A3.375 3.375 0 0012.75 9.75h-1.5A3.375 3.375 0 008.25 13.5V18.75m9-12.75v-1.5A2.25 2.25 0 0015 2.25h-6a2.25 2.25 0 00-2.25 2.25v1.5',
   },
   {
     id: 'users',
@@ -115,6 +139,14 @@ const pageMeta: Record<TabId, { title: string; subtitle: string }> = {
     title: 'Muscle Library',
     subtitle: 'Browse and manage all muscles',
   },
+  'add-challenge': {
+    title: 'Create Official Challenge',
+    subtitle: 'Publish a global challenge with dates and a target',
+  },
+  'challenge-library': {
+    title: 'Challenge Management',
+    subtitle: 'Edit challenges, view participants, and remove inappropriate content',
+  },
   users: {
     title: 'User Management',
     subtitle: 'View registered users, change roles, and manage bans',
@@ -127,6 +159,7 @@ const groupLabels: Record<TabGroup, string> = {
   equipment: 'Equipment',
   trainers: 'Trainer Management',
   muscles: 'Muscles',
+  challenges: 'Challenges',
   users: 'User Management',
 }
 
@@ -136,6 +169,7 @@ export default function AdminPanel() {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [trainerCount, setTrainerCount] = useState(0)
+  const [challengeCount, setChallengeCount] = useState(0)
   const [muscles, setMuscles] = useState<Muscle[]>([])
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
@@ -170,6 +204,14 @@ export default function AdminPanel() {
     }
   }, [])
 
+  const loadChallenges = useCallback(async () => {
+    try {
+      setChallengeCount(await getChallengeCount())
+    } catch {
+      setChallengeCount(0)
+    }
+  }, [])
+
   const loadMuscles = useCallback(async () => {
     setLoadingMuscles(true)
     try {
@@ -193,8 +235,9 @@ export default function AdminPanel() {
     void loadEquipment()
     void loadTrainers()
     void loadMuscles()
+    void loadChallenges()
     void loadUsers()
-  }, [loadExercises, loadEquipment, loadTrainers, loadMuscles, loadUsers])
+  }, [loadExercises, loadEquipment, loadTrainers, loadMuscles, loadChallenges, loadUsers])
 
   function showToast(message: string) {
     setToast(message)
@@ -245,11 +288,23 @@ export default function AdminPanel() {
     showToast('Muscle updated successfully!')
   }
 
+  function handleChallengeSaved() {
+    void loadChallenges()
+    showToast('Challenge saved successfully!')
+    setActiveTab('challenge-library')
+  }
+
+  function handleChallengeUpdated() {
+    void loadChallenges()
+    showToast('Challenge updated successfully!')
+  }
+
   const counts: Partial<Record<TabId, number>> = {
     library: exercises.length,
     'equipment-library': equipment.length,
     'trainer-library': trainerCount,
     'muscle-library': muscles.length,
+    'challenge-library': challengeCount,
     users: users.length,
   }
 
@@ -313,6 +368,9 @@ export default function AdminPanel() {
     if (activeTab === 'add-muscle') {
       return <MuscleForm onSaved={handleMuscleSaved} />
     }
+    if (activeTab === 'add-challenge') {
+      return <ChallengeForm onSaved={handleChallengeSaved} />
+    }
     if (loading) {
       return (
         <div className="flex items-center justify-center py-20">
@@ -358,6 +416,9 @@ export default function AdminPanel() {
         />
       )
     }
+    if (activeTab === 'challenge-library') {
+      return <ChallengeList onUpdated={handleChallengeUpdated} />
+    }
     return (
       <UserList
         users={users}
@@ -392,6 +453,7 @@ export default function AdminPanel() {
           {renderNavGroup('equipment')}
           {renderNavGroup('trainers')}
           {renderNavGroup('muscles')}
+          {renderNavGroup('challenges')}
           {renderNavGroup('users')}
         </nav>
 
